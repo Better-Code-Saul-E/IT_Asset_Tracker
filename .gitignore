@@ -1,0 +1,20 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore SQLite databases
+*.db
+
+# Ignore export files
+exports/*.csv
+exports/*.json
+
+# Ignore environment/virtualenv
+.env
+venv/
+ENV/
+
+# Ignore macOS system files
+.DS_Store
