@@ -1,20 +1,17 @@
-# Ignore Python cache
+# --- Python Internals ---
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
 
-# Ignore SQLite databases
+# --- Operating System Files ---
+.DS_Store
+
+# --- Application Data ---
 *.db
 
-# Ignore export files
-exports/*.csv
-exports/*.json
+# --- Generated Reports ---
+exports/
 
-# Ignore environment/virtualenv
-.env
+# --- Environment / Config ---
 venv/
-ENV/
-
-# Ignore macOS system files
-.DS_Store
+env/
+.env
