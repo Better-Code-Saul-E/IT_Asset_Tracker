@@ -7,9 +7,18 @@ from src.it_asset_tracker.models.asset import Asset
 class SQLiteAssetRepository(IAssetRepository):
     def __init__(self, db_path: str):
         self.db_path = db_path
+        self.connection = None
+        
+        if self.db_path == ":memory:":
+            self.connection = sqlite3.connect(self.db_path)
+            self.connection.execute("PRAGMA foreign_keys = 1")
+
         self._create_table()
 
     def _get_connection(self):
+        if self.connection:
+            return self.connection
+        
         return sqlite3.connect(self.db_path)
     
     def _create_table(self):
@@ -20,7 +29,7 @@ class SQLiteAssetRepository(IAssetRepository):
                     device_type TEXT,
                     manufacturer TEXT,
                     model TEXT,
-                    serial_number TEXT
+                    serial_number TEXT NOT NULL UNIQUE
                 )""")
             
     def add(self, asset: Asset) -> int:
