@@ -1,14 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict
-from src.it_asset_tracker.models.asset import Asset
+from typing import List, Dict, Any
 
 class IAssetRepository(ABC):
     @abstractmethod
-    def add(self, asset: Asset) -> int:
+    def add(self, data: Dict[str, Any]) -> int:
         pass
     
     @abstractmethod
-    def get_all(self) -> List[Asset]:
+    def get_all(self) -> List[Dict[str, Any]]:
         pass
 
     @abstractmethod
@@ -16,9 +15,13 @@ class IAssetRepository(ABC):
         pass
 
     @abstractmethod
-    def update(self, asset: Asset) -> bool:
+    def update(self, asset_id: int, data: Dict[str, Any]) -> bool:
         pass
     
     @abstractmethod
-    def get_by_id(self, asset_id: int) -> Asset:
+    def get_by_id(self, asset_id: int) -> Dict[str, Any]:
+        pass
+    
+    @abstractmethod
+    def get_columns(self) -> Dict[str, str]:
         pass
