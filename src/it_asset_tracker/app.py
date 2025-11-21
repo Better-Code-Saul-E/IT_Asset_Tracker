@@ -8,7 +8,6 @@ from src.it_asset_tracker.services.export_service import ExportService
 
 def main():
     view = CLIView()
-    
     data_dir = get_data_directory()
     os.makedirs(data_dir, exist_ok=True)
 
@@ -25,23 +24,42 @@ def main():
 
         elif choice == '2':
             db_name = view.prompt_db_name()
-            if not db_name:
-                view.show_error("Database name cannot be empty.")
-                continue
-            
-            if not db_name.endswith(".db"):
-                db_name += ".db"
+            if not db_name: continue
+            if not db_name.endswith(".db"): db_name += ".db"
             
             db_path = os.path.join(data_dir, db_name)
+            
+            if not os.path.exists(db_path):
+                view.show_error("Database does not exist! Use option 3 to create it.")
+                continue
 
             repo = SQLiteAssetRepository(db_path)
             service = AssetService(repo)
             controller = AssetController(service, export_service, view)
-
             controller.run()
 
         elif choice == '3':
-            view.show_goodbye()
+            db_name = view.prompt_db_name()
+            if not db_name: continue
+            if not db_name.endswith(".db"): db_name += ".db"
+            
+            db_path = os.path.join(data_dir, db_name)
+            
+            if os.path.exists(db_path):
+                view.show_error("Database already exists! Use option 2 to open it.")
+                continue
+
+            schema = view.prompt_for_schema()
+
+            repo = SQLiteAssetRepository(db_path)
+            repo._create_table(schema)
+
+            service = AssetService(repo)
+            controller = AssetController(service, export_service, view)
+            controller.run()
+
+        elif choice == '4':
+            view.show_message("\nExiting application. Goodbye!")
             break
         else:
             view.show_error("Invalid choice.")

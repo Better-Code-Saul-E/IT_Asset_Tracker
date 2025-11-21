@@ -7,10 +7,8 @@ class AssetController:
         self.service = service
         self.export_service = export_service
         self.view = view
-
+ 
     def run(self):
-        self.view.show_welcome()
-        
         while True:
             choice = self.view.show_menu()
             
@@ -19,10 +17,12 @@ class AssetController:
                 self.view.display_assets(assets)
             
             elif choice == '2':
+                columns = self.service.get_table_columns()
+                data = self.view.prompt_for_asset_data(columns)
+                
                 try:
-                    dtype, manuf, model, serial = self.view.prompt_for_asset_data()
-                    new_id = self.service.create_asset(dtype, manuf, model, serial)
-                    self.view.show_message(f"Asset created successfully with ID: {new_id}")
+                    new_id = self.service.create_dynamic_asset(data)
+                    self.view.show_message(f"Created with ID: {new_id}")
                 except ValueError as e:
                     self.view.show_error(str(e))
             
@@ -32,8 +32,9 @@ class AssetController:
                     existing_asset = self.service.get_asset(asset_id)
                     
                     if existing_asset:
-                        updated_asset = self.view.prompt_for_update(existing_asset)
-                        self.service.update_asset_details(updated_asset)
+                        updated_data = self.view.prompt_for_update(existing_asset)
+                        
+                        self.service.update_asset_details(asset_id, updated_data)
                         self.view.show_message("Asset updated successfully.")
                     else:
                         self.view.show_message("Asset not found.")
@@ -44,15 +45,18 @@ class AssetController:
                 try:
                     asset_id = self.view.prompt_for_id("delete")
                     success = self.service.remove_asset(asset_id)
+
                     if success:
                         self.view.show_message("Asset deleted.")
                     else:
                         self.view.show_message("Asset not found.")
+
                 except ValueError:
                     self.view.show_message("Invalid ID format.")
 
             elif choice == '5':
                 fmt, fname = self.view.prompt_for_export()
+                
                 try:
                     assets = self.service.get_all_assets()
                     if not assets:

@@ -1,84 +1,91 @@
-from tabulate import tabulate
-from typing import List
-from src.it_asset_tracker.models.asset import Asset
+from typing import List, Dict
+from src.it_asset_tracker.views.console_io import ConsoleIO
+from src.it_asset_tracker.views.renderers import TableRenderer, MenuRenderer
+from src.it_asset_tracker.views.dialogs import SchemaBuilderDialog
 
 class CLIView:
-    def show_startup_menu(self):
-        print("\n===== IT Asset Tracker Main Menu =====")
-        print("1) List Existing databases")
-        print("2) Open / Create a new database")
-        print("3) Exit application")
-        return input("Enter your choice: ")
+    def __init__(self):
+        self.io = ConsoleIO()
+        self.table_renderer = TableRenderer()
+        self.menu_renderer = MenuRenderer()
 
-    def display_database_list(self, database_names: List[str]):
-        print("\n===== Existing Databases =====")
-        if not database_names:
-            print("No databases found.")
-            return
-        
-        for i, name in enumerate(database_names):
-            print(f"{i + 1}) {name}")
-
-    def prompt_db_name(self):
-        return input("Enter database name to create or open (e.g. 'company_assets'): ")
-
-    def show_goodbye(self):
-        print("Exiting application. Goodbye!")
+    def show_message(self, message: str):
+        self.io.display(f"\n[INFO] {message}")
+        self.io.get_input("Press Enter to continue...")
 
     def show_error(self, message: str):
-        print(f"[ERROR] {message}")
+        self.io.display(f"\n[ERROR] {message}")
+        self.io.get_input("Press Enter to continue...")
+
+    def show_startup_menu(self) -> str:
+        self.io.clear()
+        options = [
+            "1) List Existing Databases",
+            "2) Open Existing Database",
+            "3) Create New Database",
+            "4) Exit"
+        ]
+
+        formatted_menu = self.menu_renderer.render("IT Asset Tracker", options)
+        self.io.display(formatted_menu)
+        return self.io.get_input("Enter choice: ")
+
+    def show_menu(self) -> str:
+        self.io.clear()
+        options = [
+            "1. List Assets", 
+            "2. Add Asset", 
+            "3. Update Asset",
+            "4. Delete Asset", 
+            "5. Export Assets", 
+            "6. Back"
+        ]
+        self.io.display(self.menu_renderer.render("Asset Manager", options))
+        return self.io.get_input("Select option: ")
+    
+
+    def display_assets(self, assets: List[dict]):
+        formatted_table = self.table_renderer.render(assets)
+        self.io.display("\n" + formatted_table)
+        self.io.get_input("\nPress Enter to continue...")
+
+    def display_database_list(self, names: List[str]):
+        self.io.display(self.menu_renderer.render("Existing Databases", 
+            [f"{i+1}) {name}" for i, name in enumerate(names)]))
+        
+        self.io.get_input("\nPress Enter to continue...")
+        
+
+    def prompt_for_schema(self) -> Dict[str, str]:
+        dialog = SchemaBuilderDialog(self.io, self.io)
+        return dialog.run()
 
 
-
-
-    def show_welcome(self):
-        print("\n===== Managing Assets =====")
-
-    def show_menu(self):
-        print("\n1. List Assets")
-        print("2. Add Asset")
-        print("3. Update Asset")
-        print("4. Delete Asset")
-        print("5. Export Assets") 
-        print("6. Back to Main Menu")
-        return input("Select an option: ")
-
-    def display_assets(self, assets: List[Asset]):
-        if not assets:
-            print("No assets found.")
-            return
-        data = [[a.id, a.device_type, a.manufacturer, a.model, a.serial_number] for a in assets]
-        headers = ["ID", "Type", "Manufacturer", "Model", "Serial"]
-        print(tabulate(data, headers=headers, tablefmt="grid"))
-
-    def prompt_for_asset_data(self):
-        print("\n--- Add New Asset ---")
-        dtype = input("Device Type: ")
-        manuf = input("Manufacturer: ")
-        model = input("Model: ")
-        serial = input("Serial Number: ")
-        return dtype, manuf, model, serial
-
+    def prompt_db_name(self):
+        return self.io.get_input("Enter database name: ")
+    
     def prompt_for_id(self, action="delete"):
-        return int(input(f"Enter ID to {action}: "))
-    
-    def show_message(self, message: str):
-        print(f"[INFO] {message}")
-    
-    def prompt_for_update(self, current_asset: Asset):
-        print(f"\n--- Update Asset (ID: {current_asset.id}) ---")
-        print("Press [Enter] to keep current value.")
-        
-        dtype = input(f"Device Type [{current_asset.device_type}]: ") or current_asset.device_type
-        manuf = input(f"Manufacturer [{current_asset.manufacturer}]: ") or current_asset.manufacturer
-        model = input(f"Model [{current_asset.model}]: ") or current_asset.model
-        serial = input(f"Serial Number [{current_asset.serial_number}]: ") or current_asset.serial_number
-        
-        return Asset(id=current_asset.id, device_type=dtype, manufacturer=manuf, model=model, serial_number=serial)
+        return int(self.io.get_input(f"Enter ID to {action}: "))
+
+    def prompt_for_asset_data(self, columns: list) -> dict:
+        self.io.display("\n--- Add New Entry ---")
+        data = {}
+        for col in columns:
+            if "id" in col.lower(): continue
+            data[col] = self.io.get_input(f"Enter {col}: ")
+        return data
+
+    def prompt_for_update(self, current: dict) -> dict:
+        self.io.display(f"\n--- Update Asset ---")
+        updated = {}
+        for col, val in current.items():
+            if col == 'asset_id': continue
+            new_val = self.io.get_input(f"{col} [{val}]: ")
+            updated[col] = new_val if new_val else val
+        return updated
     
     def prompt_for_export(self):
-        print("\n--- Export Assets ---")
-        print("Available formats: csv, json")
-        fmt = input("Enter format: ").lower()
-        fname = input("Enter filename (without extension): ")
+        fmt = self.io.get_input("Format (csv/json): ").lower()
+        fname = self.io.get_input("Filename: ")
         return fmt, fname
+
